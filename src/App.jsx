@@ -1,12 +1,16 @@
 import BlockClockDisplay from './components/BlockClockDisplay';
 import TipModal from './components/TipModal';
+import NostrPanel from './components/NostrPanel';
 import useBitcoinData from './hooks/useBitcoinData';
+import useNostr from './hooks/useNostr';
 import { useEffect, useState } from 'react';
 
 export default function App() {
   const data = useBitcoinData();
+  const nostr = useNostr(data.blockHeight);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showTip, setShowTip] = useState(false);
+  const [showNostr, setShowNostr] = useState(false);
 
   // Request a wake lock so the screen stays on (like a real BlockClock)
   useEffect(() => {
@@ -24,7 +28,6 @@ export default function App() {
 
     requestWakeLock();
 
-    // Re-acquire on visibility change (browser releases it when tab is hidden)
     const handleVisibility = () => {
       if (document.visibilityState === 'visible') {
         requestWakeLock();
@@ -52,11 +55,19 @@ export default function App() {
             github
           </a>
           <span className="footer-sep">|</span>
+          <button className="footer-zap" onClick={() => setShowTip(true)}>
+            zap
+          </button>
+          <span className="footer-sep">|</span>
           <button
             className="footer-zap"
-            onClick={() => setShowTip(true)}
+            onClick={() => setShowNostr(true)}
           >
-            zap
+            {nostr.identity.signedIn ? (
+              <span className="footer-nostr-active">nostr</span>
+            ) : (
+              'nostr'
+            )}
           </button>
           <span className="footer-sep">|</span>
           <span className="footer-license">MIT</span>
@@ -64,6 +75,13 @@ export default function App() {
       )}
 
       {showTip && <TipModal onClose={() => setShowTip(false)} />}
+      {showNostr && (
+        <NostrPanel
+          nostr={nostr}
+          blockHeight={data.blockHeight}
+          onClose={() => setShowNostr(false)}
+        />
+      )}
     </div>
   );
 }
