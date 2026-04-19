@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
+  <rect width="192" height="192" rx="32" fill="#0a0a0a"/>
+  <g transform="translate(20, 52)">
+    <!-- B -->
+    <g transform="translate(0,0) scale(0.55)">
+      <path d="M8,2 L34,2 L30,8 L12,8 Z" fill="#ff9500"/>
+      <path d="M36,4 L36,33 L31,29 L31,10 Z" fill="#1a1700"/>
+      <path d="M36,39 L36,68 L31,62 L31,43 Z" fill="#1a1700"/>
+      <path d="M8,70 L34,70 L30,64 L12,64 Z" fill="#ff9500"/>
+      <path d="M6,39 L6,68 L11,62 L11,43 Z" fill="#ff9500"/>
+      <path d="M6,4 L6,33 L11,29 L11,10 Z" fill="#ff9500"/>
+      <path d="M8,36 L12,32 L30,32 L34,36 L30,40 L12,40 Z" fill="#1a1700"/>
+    </g>
+    <!-- T -->
+    <g transform="translate(28,0) scale(0.55)">
+      <path d="M8,2 L34,2 L30,8 L12,8 Z" fill="#ff9500"/>
+      <path d="M36,4 L36,33 L31,29 L31,10 Z" fill="#1a1700"/>
+      <path d="M36,39 L36,68 L31,62 L31,43 Z" fill="#1a1700"/>
+      <path d="M8,70 L34,70 L30,64 L12,64 Z" fill="#1a1700"/>
+      <path d="M6,39 L6,68 L11,62 L11,43 Z" fill="#ff9500"/>
+      <path d="M6,4 L6,33 L11,29 L11,10 Z" fill="#ff9500"/>
+      <path d="M8,36 L12,32 L30,32 L34,36 L30,40 L12,40 Z" fill="#ff9500"/>
+    </g>
+    <!-- C -->
+    <g transform="translate(56,0) scale(0.55)">
+      <path d="M8,2 L34,2 L30,8 L12,8 Z" fill="#ff9500"/>
+      <path d="M36,4 L36,33 L31,29 L31,10 Z" fill="#1a1700"/>
+      <path d="M36,39 L36,68 L31,62 L31,43 Z" fill="#1a1700"/>
+      <path d="M8,70 L34,70 L30,64 L12,64 Z" fill="#ff9500"/>
+      <path d="M6,39 L6,68 L11,62 L11,43 Z" fill="#ff9500"/>
+      <path d="M6,4 L6,33 L11,29 L11,10 Z" fill="#ff9500"/>
+      <path d="M8,36 L12,32 L30,32 L34,36 L30,40 L12,40 Z" fill="#1a1700"/>
+    </g>
+    <!-- Small "21" below in dimmer orange -->
+    <text x="76" y="85" font-family="monospace" font-size="16" fill="#ff9500" opacity="0.5" text-anchor="middle">21M</text>
+  </g>
+  <!-- Block icon - small square grid -->
+  <g transform="translate(108, 60)" opacity="0.6">
+    <rect x="0" y="0" width="28" height="28" rx="3" fill="none" stroke="#ff9500" stroke-width="2"/>
+    <rect x="36" y="0" width="28" height="28" rx="3" fill="none" stroke="#ff9500" stroke-width="2"/>
+    <rect x="0" y="36" width="28" height="28" rx="3" fill="none" stroke="#ff9500" stroke-width="2"/>
+    <rect x="36" y="36" width="28" height="28" rx="3" fill="none" stroke="#ff9500" stroke-width="2"/>
+  </g>
+</svg>

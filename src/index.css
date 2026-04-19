@@ -1,154 +1,278 @@
-* {
+/* ============================================================
+   ChainClock - BlockClock-inspired CSS
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500&display=swap');
+
+:root {
+  --amber: #ff9500;
+  --amber-dim: #ff950033;
+  --ghost: #1a1700;
+  --housing: #0a0a0a;
+  --housing-border: #1a1a1a;
+  --bg: #000000;
+  --text-muted: #444444;
+}
+
+/* -- Reset & base --------------------------------------------------------- */
+
+*, *::before, *::after {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
 html, body, #root {
-  width: 100%;
   height: 100%;
+  width: 100%;
+  overflow: hidden;
 }
 
 body {
-  font-family: 'Monaco', 'Courier New', monospace;
-  background: #000;
-  color: #fff;
-  transition: background 0.3s ease, color 0.3s ease;
+  background: var(--bg);
+  color: var(--amber);
+  font-family: 'JetBrains Mono', 'Monaco', 'Courier New', monospace;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
-body.light-mode {
-  background: #fff;
-  color: #000;
-}
+/* -- App layout ----------------------------------------------------------- */
 
-.container {
+.app {
+  height: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 100vh;
-  padding: 20px;
+  padding: env(safe-area-inset-top, 0) 16px env(safe-area-inset-bottom, 0);
 }
 
-.header {
-  text-align: center;
-  margin-bottom: 40px;
-}
+/* -- BlockClock outer wrapper --------------------------------------------- */
 
-.title {
-  font-size: 2.5rem;
-  font-weight: bold;
-  letter-spacing: 2px;
-  margin-bottom: 10px;
-}
-
-.subtitle {
-  font-size: 0.9rem;
-  opacity: 0.7;
-  letter-spacing: 1px;
-}
-
-.block-display {
+.bc-outer {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 30px;
-  margin-bottom: 40px;
-}
-
-.block-counter {
-  font-size: 4rem;
-  font-weight: bold;
-  letter-spacing: 3px;
-  font-variant-numeric: tabular-nums;
-  animation: pulse 2s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.8; }
-}
-
-.block-hash {
-  font-size: 1.2rem;
-  letter-spacing: 1px;
-  font-family: 'Courier New', monospace;
-  word-break: break-all;
-  text-align: center;
-}
-
-.block-stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 20px;
   width: 100%;
-  max-width: 600px;
-  margin: 30px 0;
+  max-width: 620px;
 }
 
-.stat {
-  text-align: center;
-  padding: 15px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 4px;
-}
+/* -- Device housing ------------------------------------------------------- */
 
-body.light-mode .stat {
-  border-color: rgba(0, 0, 0, 0.2);
-}
-
-.stat-label {
-  font-size: 0.8rem;
-  opacity: 0.7;
-  margin-bottom: 8px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-.stat-value {
-  font-size: 1.3rem;
-  font-weight: bold;
-}
-
-.controls {
-  display: flex;
-  gap: 15px;
-  flex-wrap: wrap;
-  justify-content: center;
-  margin: 30px 0;
-}
-
-button {
-  padding: 10px 20px;
-  font-size: 1rem;
-  border: 1px solid currentColor;
-  background: transparent;
-  color: inherit;
+.bc-housing {
+  background: var(--housing);
+  border-radius: 18px;
+  border: 1px solid var(--housing-border);
+  padding: 24px 20px 18px;
+  width: 100%;
+  position: relative;
   cursor: pointer;
-  letter-spacing: 1px;
-  transition: all 0.3s ease;
-  font-family: 'Monaco', 'Courier New', monospace;
+  transition: border-color 0.3s;
 }
 
-button:hover {
-  background: currentColor;
-  color: inherit;
-  filter: invert(1);
+.bc-housing:hover {
+  border-color: #222;
 }
+
+.bc-housing:active {
+  border-color: var(--amber-dim);
+}
+
+/* -- Connection status dot ------------------------------------------------ */
+
+.bc-status {
+  position: absolute;
+  top: 10px;
+  left: 14px;
+}
+
+.bc-status-dot {
+  display: block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #331a00;
+  transition: background 0.5s;
+}
+
+.bc-status-dot.connected {
+  background: var(--amber);
+}
+
+/* -- Screen label --------------------------------------------------------- */
+
+.bc-label {
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--amber);
+  opacity: 0.6;
+  text-align: center;
+  margin-bottom: 10px;
+  height: 13px;
+  line-height: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+/* -- Digit display area --------------------------------------------------- */
+
+.bc-display {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 2px;
+  min-height: 60px;
+}
+
+/* -- Device badge --------------------------------------------------------- */
+
+.bc-badge {
+  position: absolute;
+  bottom: 6px;
+  right: 12px;
+  font-size: 8px;
+  font-weight: 300;
+  letter-spacing: 2px;
+  color: var(--amber);
+  opacity: 0.25;
+  text-transform: uppercase;
+}
+
+/* -- Navigation dots ------------------------------------------------------ */
+
+.bc-nav {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.bc-nav-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #222;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: background 0.3s, transform 0.2s;
+}
+
+.bc-nav-dot:hover {
+  background: #444;
+  transform: scale(1.3);
+}
+
+.bc-nav-dot.active {
+  background: var(--amber);
+}
+
+/* -- Hint text ------------------------------------------------------------ */
+
+.bc-hint {
+  font-size: 9px;
+  font-weight: 300;
+  letter-spacing: 1.5px;
+  color: var(--text-muted);
+  text-transform: lowercase;
+}
+
+/* -- Footer --------------------------------------------------------------- */
 
 .footer {
-  margin-top: 50px;
-  text-align: center;
-  opacity: 0.6;
-  font-size: 0.8rem;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 10px 0;
+  padding-bottom: max(10px, env(safe-area-inset-bottom, 10px));
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  font-size: 9px;
+  font-weight: 300;
+  letter-spacing: 1.5px;
+  color: #333;
 }
 
 .footer a {
-  color: inherit;
-  text-decoration: underline;
+  color: #444;
+  text-decoration: none;
+  transition: color 0.2s;
 }
 
-@media (max-width: 768px) {
-  .title { font-size: 1.8rem; }
-  .block-counter { font-size: 2.5rem; }
+.footer a:hover {
+  color: var(--amber);
+}
+
+.footer-sep {
+  color: #222;
+}
+
+.footer-npub {
+  cursor: default;
+}
+
+.footer-license {
+  text-transform: uppercase;
+}
+
+/* -- Responsive ----------------------------------------------------------- */
+
+@media (max-width: 400px) {
+  .bc-housing {
+    border-radius: 12px;
+    padding: 18px 12px 14px;
+  }
+
+  .bc-label {
+    font-size: 8px;
+    letter-spacing: 2px;
+  }
+
+  .bc-badge {
+    font-size: 7px;
+  }
+}
+
+/* Landscape orientation: tighten vertical spacing */
+@media (max-height: 480px) and (orientation: landscape) {
+  .bc-outer {
+    gap: 10px;
+  }
+
+  .bc-housing {
+    padding: 14px 16px 12px;
+    border-radius: 12px;
+  }
+
+  .bc-hint {
+    display: none;
+  }
+}
+
+/* Large screens: let the display breathe */
+@media (min-width: 768px) {
+  .bc-housing {
+    padding: 32px 28px 24px;
+    border-radius: 22px;
+  }
+}
+
+/* -- Animations ----------------------------------------------------------- */
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+/* Pulse the label gently when loading */
+.bc-label[data-loading="true"] {
+  animation: pulse 1.5s ease-in-out infinite;
 }
