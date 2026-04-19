@@ -81,14 +81,28 @@ function screenFees(data) {
   return { label: 'SUGGESTED FEE  SAT/VB', chars: ['F','E','E',' ',' ', ...padded, ' '] };
 }
 
-function screenTime() {
+function screenTime(data, useUtc) {
   const now = new Date();
-  const h = String(now.getUTCHours()).padStart(2, '0');
-  const m = String(now.getUTCMinutes()).padStart(2, '0');
-  const s = String(now.getUTCSeconds()).padStart(2, '0');
+  if (useUtc) {
+    const h = String(now.getUTCHours()).padStart(2, '0');
+    const m = String(now.getUTCMinutes()).padStart(2, '0');
+    const s = String(now.getUTCSeconds()).padStart(2, '0');
+    return {
+      label: 'TIME  UTC',
+      chars: [' ', h[0], h[1], ':', m[0], m[1], ':', s[0], s[1]],
+      toggleable: true,
+    };
+  }
+  const h = String(now.getHours()).padStart(2, '0');
+  const m = String(now.getMinutes()).padStart(2, '0');
+  const s = String(now.getSeconds()).padStart(2, '0');
+  const tz = Intl.DateTimeFormat('en', { timeZoneName: 'short' })
+    .formatToParts(now)
+    .find((p) => p.type === 'timeZoneName')?.value || 'LOCAL';
   return {
-    label: 'TIME  UTC',
+    label: `TIME  ${tz}`,
     chars: [' ', h[0], h[1], ':', m[0], m[1], ':', s[0], s[1]],
+    toggleable: true,
   };
 }
 
@@ -107,6 +121,9 @@ export default function BlockClockDisplay({ data, onFullscreenChange }) {
   const [activeScreen, setActiveScreen] = useState(0);
   const [digitSize, setDigitSize] = useState(42);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [useUtc, setUseUtc] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('cc-utc')) ?? false; } catch { return false; }
+  });
   const timerRef = useRef(null);
   const containerRef = useRef(null);
   const outerRef = useRef(null);
@@ -183,24 +200,35 @@ export default function BlockClockDisplay({ data, onFullscreenChange }) {
 
   useEffect(() => {
     function handleResize() {
-      if (!containerRef.current) return;
-      const w = containerRef.current.offsetWidth;
-      const h = containerRef.current.offsetHeight;
-
       if (isFullscreen) {
-        // In fullscreen, scale digits to fill the housing
-        // Use the smaller of width-based or height-based sizing
+        // In fullscreen, use viewport dimensions directly
+        // (container offsetWidth/Height can be stale during transitions)
+        const w = window.innerWidth;
+        const h = window.innerHeight;
         const wBased = Math.floor((w - 48) / 11);
         const hBased = Math.floor((h - 80) / 1.72);
         setDigitSize(Math.min(wBased, hBased, 120));
       } else {
+        if (!containerRef.current) return;
+        const w = containerRef.current.offsetWidth;
         const targetDigitW = Math.floor((w - 48) / 11);
         setDigitSize(Math.min(Math.max(targetDigitW, 24), 56));
       }
     }
-    handleResize();
+
+    // Delay first calculation to let the DOM settle after class changes
+    const raf = requestAnimationFrame(() => {
+      handleResize();
+    });
+
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', handleResize);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('orientationchange', handleResize);
+    };
   }, [isFullscreen]);
 
   // -- Screen cycling ---------------------------------------------------------
@@ -224,11 +252,20 @@ export default function BlockClockDisplay({ data, onFullscreenChange }) {
   }, []);
 
   const screenFn = SCREENS[activeScreen];
-  const screen = screenFn(data);
+  const screen = screenFn(data, useUtc);
 
   const handleTap = () => {
     setActiveScreen((prev) => (prev + 1) % SCREENS.length);
     resetTimer();
+  };
+
+  const handleLabelTap = (e) => {
+    if (screen.toggleable) {
+      e.stopPropagation();
+      const next = !useUtc;
+      setUseUtc(next);
+      try { localStorage.setItem('cc-utc', JSON.stringify(next)); } catch {}
+    }
   };
 
   const goTo = (i) => {
@@ -296,7 +333,13 @@ export default function BlockClockDisplay({ data, onFullscreenChange }) {
         )}
 
         {/* Screen label */}
-        <div className="bc-label">{screen.label}</div>
+        {/* Screen label - tappable on time screen to toggle UTC/local */}
+        <div
+          className={`bc-label ${screen.toggleable ? 'bc-label-toggle' : ''}`}
+          onClick={screen.toggleable ? handleLabelTap : undefined}
+        >
+          {screen.label}
+        </div>
 
         {/* Seven-segment display area */}
         <div className="bc-display">{renderChars(screen.chars)}</div>
