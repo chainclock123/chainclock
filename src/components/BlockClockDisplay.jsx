@@ -103,28 +103,108 @@ const SCREENS = [
 
 // -- Component ----------------------------------------------------------------
 
-export default function BlockClockDisplay({ data }) {
+export default function BlockClockDisplay({ data, onFullscreenChange }) {
   const [activeScreen, setActiveScreen] = useState(0);
   const [digitSize, setDigitSize] = useState(42);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const timerRef = useRef(null);
   const containerRef = useRef(null);
+  const outerRef = useRef(null);
 
-  // Responsive digit sizing
+  // -- Fullscreen API ---------------------------------------------------------
+
+  const enterFullscreen = useCallback(async (e) => {
+    e.stopPropagation();
+    const el = document.documentElement;
+    try {
+      if (el.requestFullscreen) {
+        await el.requestFullscreen();
+      } else if (el.webkitRequestFullscreen) {
+        await el.webkitRequestFullscreen(); // Safari
+      }
+    } catch (err) {
+      // Fullscreen not supported (e.g. iPhone Safari in-browser)
+      // Fall back to a CSS-only "fake" fullscreen
+      setIsFullscreen(true);
+      if (onFullscreenChange) onFullscreenChange(true);
+    }
+  }, [onFullscreenChange]);
+
+  const exitFullscreen = useCallback((e) => {
+    e.stopPropagation();
+    if (document.fullscreenElement || document.webkitFullscreenElement) {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      }
+    } else {
+      // CSS-only fallback
+      setIsFullscreen(false);
+      if (onFullscreenChange) onFullscreenChange(false);
+    }
+  }, [onFullscreenChange]);
+
+  // Sync state with the browser's fullscreen events
+  useEffect(() => {
+    function handleChange() {
+      const fs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+      setIsFullscreen(fs);
+      if (onFullscreenChange) onFullscreenChange(fs);
+    }
+    document.addEventListener('fullscreenchange', handleChange);
+    document.addEventListener('webkitfullscreenchange', handleChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleChange);
+      document.removeEventListener('webkitfullscreenchange', handleChange);
+    };
+  }, [onFullscreenChange]);
+
+  // Lock to landscape when fullscreen (where supported)
+  useEffect(() => {
+    if (!isFullscreen) return;
+    try {
+      if (screen.orientation && screen.orientation.lock) {
+        screen.orientation.lock('landscape').catch(() => {});
+      }
+    } catch (e) {
+      // Not supported, no problem
+    }
+    return () => {
+      try {
+        if (screen.orientation && screen.orientation.unlock) {
+          screen.orientation.unlock();
+        }
+      } catch (e) {}
+    };
+  }, [isFullscreen]);
+
+  // -- Responsive digit sizing ------------------------------------------------
+
   useEffect(() => {
     function handleResize() {
       if (!containerRef.current) return;
       const w = containerRef.current.offsetWidth;
-      // 9 digits + separators need roughly 11 "units" of width
-      // Each digit is ~42px at base, so scale to fill available width
-      const targetDigitW = Math.floor((w - 48) / 11);
-      setDigitSize(Math.min(Math.max(targetDigitW, 24), 56));
+      const h = containerRef.current.offsetHeight;
+
+      if (isFullscreen) {
+        // In fullscreen, scale digits to fill the housing
+        // Use the smaller of width-based or height-based sizing
+        const wBased = Math.floor((w - 48) / 11);
+        const hBased = Math.floor((h - 80) / 1.72);
+        setDigitSize(Math.min(wBased, hBased, 120));
+      } else {
+        const targetDigitW = Math.floor((w - 48) / 11);
+        setDigitSize(Math.min(Math.max(targetDigitW, 24), 56));
+      }
     }
     handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  }, [isFullscreen]);
 
-  // Auto-advance timer
+  // -- Screen cycling ---------------------------------------------------------
+
   const resetTimer = useCallback(() => {
     clearInterval(timerRef.current);
     timerRef.current = setInterval(() => {
@@ -137,14 +217,12 @@ export default function BlockClockDisplay({ data }) {
     return () => clearInterval(timerRef.current);
   }, [resetTimer]);
 
-  // Keep the time screen updating every second
   const [, setTick] = useState(0);
   useEffect(() => {
     const id = setInterval(() => setTick((t) => t + 1), 1000);
     return () => clearInterval(id);
   }, []);
 
-  // Build the current screen
   const screenFn = SCREENS[activeScreen];
   const screen = screenFn(data);
 
@@ -158,7 +236,6 @@ export default function BlockClockDisplay({ data }) {
     resetTimer();
   };
 
-  // Render the character array into SevenSegment components
   const renderChars = (chars) =>
     chars.map((ch, i) => {
       if (ch === ',') return <CommaSeparator key={`sep-${i}`} size={digitSize} />;
@@ -166,8 +243,10 @@ export default function BlockClockDisplay({ data }) {
       return <SevenSegment key={`d-${i}`} char={ch} size={digitSize} />;
     });
 
+  // -- Render -----------------------------------------------------------------
+
   return (
-    <div className="bc-outer">
+    <div className={`bc-outer ${isFullscreen ? 'bc-fullscreen' : ''}`} ref={outerRef}>
       <div
         className="bc-housing"
         ref={containerRef}
@@ -184,6 +263,38 @@ export default function BlockClockDisplay({ data }) {
           />
         </div>
 
+        {/* Fullscreen toggle */}
+        {!isFullscreen && (
+          <button
+            className="bc-fs-btn"
+            onClick={enterFullscreen}
+            aria-label="Enter fullscreen"
+          >
+            <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
+              <polyline points="6,2 2,2 2,6" />
+              <polyline points="14,2 18,2 18,6" />
+              <polyline points="6,18 2,18 2,14" />
+              <polyline points="14,18 18,18 18,14" />
+            </svg>
+          </button>
+        )}
+
+        {/* Exit fullscreen button */}
+        {isFullscreen && (
+          <button
+            className="bc-fs-exit"
+            onClick={exitFullscreen}
+            aria-label="Exit fullscreen"
+          >
+            <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <polyline points="2,6 6,6 6,2" />
+              <polyline points="18,6 14,6 14,2" />
+              <polyline points="2,14 6,14 6,18" />
+              <polyline points="18,14 14,14 14,18" />
+            </svg>
+          </button>
+        )}
+
         {/* Screen label */}
         <div className="bc-label">{screen.label}</div>
 
@@ -194,22 +305,25 @@ export default function BlockClockDisplay({ data }) {
         <div className="bc-badge">CHAINCLOCK</div>
       </div>
 
-      {/* Navigation dots */}
-      <div className="bc-nav">
-        {SCREENS.map((_, i) => (
-          <button
-            key={i}
-            className={`bc-nav-dot ${i === activeScreen ? 'active' : ''}`}
-            onClick={(e) => {
-              e.stopPropagation();
-              goTo(i);
-            }}
-            aria-label={`Screen ${i + 1}`}
-          />
-        ))}
-      </div>
-
-      <div className="bc-hint">tap display to cycle</div>
+      {/* Navigation dots - hidden in fullscreen */}
+      {!isFullscreen && (
+        <>
+          <div className="bc-nav">
+            {SCREENS.map((_, i) => (
+              <button
+                key={i}
+                className={`bc-nav-dot ${i === activeScreen ? 'active' : ''}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  goTo(i);
+                }}
+                aria-label={`Screen ${i + 1}`}
+              />
+            ))}
+          </div>
+          <div className="bc-hint">tap display to cycle</div>
+        </>
+      )}
     </div>
   );
 }

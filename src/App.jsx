@@ -1,9 +1,12 @@
 import BlockClockDisplay from './components/BlockClockDisplay';
+import TipModal from './components/TipModal';
 import useBitcoinData from './hooks/useBitcoinData';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 export default function App() {
   const data = useBitcoinData();
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showTip, setShowTip] = useState(false);
 
   // Request a wake lock so the screen stays on (like a real BlockClock)
   useEffect(() => {
@@ -36,24 +39,31 @@ export default function App() {
   }, []);
 
   return (
-    <div className="app">
-      <BlockClockDisplay data={data} />
+    <div className={`app ${isFullscreen ? 'app-fullscreen' : ''}`}>
+      <BlockClockDisplay data={data} onFullscreenChange={setIsFullscreen} />
 
-      <footer className="footer">
-        <a
-          href="https://github.com/chainclock123/chainclock"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          github
-        </a>
-        <span className="footer-sep">|</span>
-        <span className="footer-npub" title="npub1gpstrhdp9vly68x7rl99awypecktes6nfqak5xqyqf8vt8qc3ueqxk40g8">
-          nostr
-        </span>
-        <span className="footer-sep">|</span>
-        <span className="footer-license">MIT</span>
-      </footer>
+      {!isFullscreen && (
+        <footer className="footer">
+          <a
+            href="https://github.com/chainclock123/chainclock"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            github
+          </a>
+          <span className="footer-sep">|</span>
+          <button
+            className="footer-zap"
+            onClick={() => setShowTip(true)}
+          >
+            zap
+          </button>
+          <span className="footer-sep">|</span>
+          <span className="footer-license">MIT</span>
+        </footer>
+      )}
+
+      {showTip && <TipModal onClose={() => setShowTip(false)} />}
     </div>
   );
 }
